@@ -143,6 +143,9 @@ class GameScene(Scene):
 
     class Ship(GameObject):
         COOL_DOWN = 20
+        LASER_SOUND = pygame.mixer.Sound('assets/laser_shooting_sfx.wav')
+        DAMAGE_SOUND = pygame.mixer.Sound('assets/sfx_hurt.ogg')
+        COLLIDE_SOUND = pygame.mixer.Sound('assets/sfx_explosionFlash.ogg')
         def __init__(self, x: int, y: int, image: pygame.surface.Surface, bullet_vel: int, bullet_img: pygame.surface.Surface, health: int) -> None:
             super().__init__(x, y, image)
             self.bullets: typing.List[GameScene.Bullet] = []
@@ -150,10 +153,14 @@ class GameScene(Scene):
             self.cool_down = 0
             self.health = health
             self.bullet_img = bullet_img
+            self.butllet_sound = GameScene.Ship.LASER_SOUND
+            self.damage_sound = GameScene.Ship.DAMAGE_SOUND
+            self.collide_sound = GameScene.Ship.COLLIDE_SOUND
 
         def shoot(self):
             if (self.cool_down < GameScene.Ship.COOL_DOWN): return
             self.cool_down = 0
+            self.butllet_sound.play()
             self.bullets.append(GameScene.Bullet(self.x, self.y, self.bullet_img, self.bullet_vel))
 
         def draw(self, surface: pygame.surface.Surface):
@@ -169,8 +176,12 @@ class GameScene(Scene):
                 if bullet.is_off_screen(window_height):
                     self.bullets.remove(bullet) 
 
-        def receive_damage(self, damage):
+        def receive_damage(self, damage, is_collided=False):
             self.health -= damage
+            if not is_collided:
+                self.damage_sound.play()
+            else:
+                self.collide_sound.play()
 
         def is_dead(self) -> bool:
             return self.health <= 0
@@ -179,7 +190,7 @@ class GameScene(Scene):
             return self.health
 
     class Player(Ship):
-        MAX_HEALTH = 10
+        MAX_HEALTH = 100
         PLAYER_SIZE = (50, 50)
         PLAYER_VEL = 5
         PLAYER_BULLET_VEL = -5
@@ -196,7 +207,7 @@ class GameScene(Scene):
             for enemy in enemies:
                 if self.is_collide_with(enemy):
                     enemies.remove(enemy)
-                    self.receive_damage(GameScene.PLAYER_DAMAGE)
+                    self.receive_damage(GameScene.PLAYER_DAMAGE, True)
                     effect_manager.add_effect(SmokeCircleEffect(3, self.x, self.y, 15))
                     continue
                 
@@ -248,7 +259,7 @@ class GameScene(Scene):
 
             self.move(0, GameScene.Enemy.ENEMY_VEL)
             
-            if random.randrange(0, 2 * 60) == 1:
+            if random.randrange(0, 2 * 60) == 1 and self.y > 0 and self.y < window_height:
                 self.shoot()
 
             for bullet in self.bullets:
