@@ -107,6 +107,7 @@ class GameScene(Scene):
     ENEMY_NUMBER = 5
     WINDOW_WIDTH = 600
     WINDOW_HEIGHT = 600
+    BG_VEL = 0.2
     class GameObject:
         def __init__(self, x: int, y: int, image: pygame.surface.Surface) -> None:
             self.x = x
@@ -290,6 +291,8 @@ class GameScene(Scene):
         self.btn_back = Button(x=300, y=300, width=150, height=40, pressed_color=(50,50,50), text='Back', anchor=Align.Mid_Center)
         self.btn_back.set_visible(False)
         self.btn_back.add_event_listener(EventType.Mouse_Touch_End, self.on_back)
+        self.bg_y_1 = 0
+        self.bg_y_2 = -self.window_height
 
     def handle_events(self, _: typing.List[pygame.event.Event]) -> None:
         if not self.is_running: return
@@ -309,6 +312,11 @@ class GameScene(Scene):
             self.player.shoot()
 
     def update(self) -> None:
+        self.bg_y_1 += GameScene.BG_VEL
+        self.bg_y_2 += GameScene.BG_VEL
+        if (self.bg_y_1 >= self.window_height): self.bg_y_1 = - self.window_height
+        if (self.bg_y_2 >= self.window_height): self.bg_y_2 = - self.window_height
+
         self.live_label.set_text(f'Live: {self.player.lives}')
         self.health_label.set_text(f'Health: {self.player.health}')
         self.score_label.set_text(f'Score: {self.player.score}')
@@ -336,7 +344,9 @@ class GameScene(Scene):
                 enemy.update(self.player, self.window_height)
 
     def draw(self, screen: pygame.surface.Surface) -> None:
-        screen.blit(self.img_bg, (0, 0))
+        screen.fill((0,0,0))
+        screen.blit(self.img_bg, (0, int(self.bg_y_1)))
+        screen.blit(self.img_bg, (0, int(self.bg_y_2)))
         self.live_label.draw(screen)
         self.health_label.draw(screen)
         self.score_label.draw(screen)
@@ -361,9 +371,11 @@ class StartScene(Scene):
         self.scene_manager = scene_manager
         self.btn_start = Button(x=300, y=300, width=100, height=50, text='Start', pressed_color=(50,50,50), anchor=Align.Mid_Center)
         self.btn_start.add_event_listener(EventType.Mouse_Touch_End, self.on_start_game)
+        self.title_label = Label(x=300, y=200, text="Space Shooter", text_color=(255, 255, 0), anchor=Align.Mid_Center, font_size=80)
 
     def draw(self, screen: pygame.Surface) -> None:
         screen.fill((0,0,0))
+        self.title_label.draw(screen)
         self.btn_start.draw(screen)
 
     def on_start_game(self, _) -> None:
